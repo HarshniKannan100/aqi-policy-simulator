@@ -93,29 +93,33 @@ def policy():
     sources = get_sources()
     weights = get_weights()
 
-    best_source = None
-    best_change = 0
-    best_estimated = current_aqi
+    results = {}
 
-    # simulate all but keep best
-    for source, percent in sources.items():
+    # simulate all sources
+    for source,percent in sources.items():
 
         change = simulate(pollutants, percent, weights)
-        estimated = current_aqi + change
 
-        if best_source is None or change < best_change:
-            best_source = source
-            best_change = change
-            best_estimated = estimated
+        results[source] = {
+            "aqi_change": change,
+            "estimated_aqi": current_aqi + change
+        }
+
+    # rank policies (largest improvement first)
+    ranked = sorted(results.items(), key=lambda x: x[1]["aqi_change"])
+
+    best_source, best_result = ranked[0]
 
     return {
         "pollutants": pollutants,
         "sources": sources,
+        "weights": weights,
+
+
 
         "top_recommendation": {
             "policy": best_source,
-            "aqi_change": best_change,
-            "estimated_aqi": best_estimated,
-            "current_aqi": current_aqi
+            "expected_change": best_result["aqi_change"],
+            "estimated_aqi": best_result["estimated_aqi"]
         }
     }
